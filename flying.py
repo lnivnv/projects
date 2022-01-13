@@ -9,7 +9,7 @@ clock = pygame.time.Clock()
 fps = 60
 
 screen_width = 800
-screen_height = 470
+screen_height = 501
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Flying Mario')
@@ -25,8 +25,9 @@ last_pipe = pygame.time.get_ticks() - pipe_frequency
 score = 0
 pass_pipe = False
 
+
 def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+    fullname = os.path.join('pygameGitHub/data', name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -43,7 +44,9 @@ def load_image(name, colorkey=None):
 
 bg = load_image('mybg.jpg')
 ground_img = load_image('ground.png')
-button_img = load_image('restart.xcf')
+restart_img = load_image('restart.xcf')
+score_img = load_image('score.xcf')
+# start_img = load_image('start_img')
 
 
 def draw_text(text, font, text_col, x, y):
@@ -77,17 +80,20 @@ class Mario(pygame.sprite.Sprite):
 
     def update(self):
         if flying == True:
+
             self.v += 0.5
             if self.v > 8:
                 self.v = 8
             if self.rect.bottom < 768:
                 self.rect.y += int(self.v)
         if game_over == False:
+            # jump
             if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
                 self.v = -10
             if pygame.mouse.get_pressed()[0] == 0:
                 self.clicked = False
+            # handle the animation
             flap_cooldown = 5
             self.counter += 1
 
@@ -97,8 +103,11 @@ class Mario(pygame.sprite.Sprite):
                 if self.index >= len(self.img):
                     self.index = 0
                 self.image = self.img[self.index]
+
+
             self.image = pygame.transform.rotate(self.img[self.index], self.v * -2)
         else:
+
             self.image = pygame.transform.rotate(self.img[self.index], -90)
 
 
@@ -110,9 +119,9 @@ class Pipe(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         if position == 1:
             self.image = pygame.transform.flip(self.image, False, True)
-            self.rect.bottomleft = [x, y - int(pipe_gap / 2)]
+            self.rect.bottomleft = [x, y - int(pipe_gap / 1.1)]
         elif position == -1:
-            self.rect.topleft = [x, y + int(pipe_gap / 2)]
+            self.rect.topleft = [x, y + int(pipe_gap / 1.1)]
 
     def update(self):
         self.rect.x -= scroll_speed
@@ -120,7 +129,27 @@ class Pipe(pygame.sprite.Sprite):
             self.kill()
 
 
-class Button():
+class Restart():
+    def __init__(self, x, y, image):
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+
+    def draw(self):
+        action = False
+
+        pos = pygame.mouse.get_pos()
+
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                action = True
+
+        screen.blit(self.image, (self.rect.x, self.rect.y))
+
+        return action
+
+
+class Score():
     def __init__(self, x, y, image):
         self.image = image
         self.rect = self.image.get_rect()
@@ -133,16 +162,16 @@ class Button():
             if pygame.mouse.get_pressed()[0] == 1:
                 action = True
         screen.blit(self.image, (self.rect.x, self.rect.y))
+
         return action
 
 
 pipe_group = pygame.sprite.Group()
 bird_group = pygame.sprite.Group()
-
 flappy = Mario(100, int(screen_height / 2))
 bird_group.add(flappy)
-button = Button(screen_width // 2 - 50, screen_height // 2 - 100, button_img)
-
+res_button = Restart(screen_width // 2 - 60, screen_height // 2 + 50, restart_img)
+sc_button = Score(screen_width // 2 - 60, screen_height // 2 - 27, score_img)
 run = True
 while run:
     clock.tick(fps)
@@ -179,10 +208,15 @@ while run:
         ground_scroll -= scroll_speed
         if abs(ground_scroll) > 35:
             ground_scroll = 0
+
     if game_over == True:
-        if button.draw():
+        if res_button.draw():
             game_over = False
             score = reset_game()
+        if sc_button.draw():
+            game_over = False
+            score = reset_game()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
