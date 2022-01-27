@@ -1,17 +1,14 @@
-import pygame, sys, os, random
-from button import Button
+import pygame
+import random
+import os
+import sys
+import sqlite3
 
 pygame.init()
-
-pygame.init()
-
-clock = pygame.time.Clock()
-fps = 60
-
-screen_width = 1280
-screen_height = 720
+screen_height = 750
+screen_width = 746
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Menu")
+pygame.display.set_caption('Flaying Mario Menu')
 
 
 def load_image(name, colorkey=None):
@@ -30,14 +27,11 @@ def load_image(name, colorkey=None):
     return image
 
 
-BG = load_image("mariobg.png")
-
-
-def get_font(size):  # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("data/font.ttf", size)
-
-
-def play():
+def game():
+    clock = pygame.time.Clock()
+    fps = 60
+    screen_width = 750
+    screen_height = 746
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption('Flying Mario')
     font = pygame.font.SysFont('Bauhaus 93', 60)
@@ -51,28 +45,10 @@ def play():
     last_pipe = pygame.time.get_ticks() - pipe_frequency
     score = 0
     pass_pipe = False
-
-    def load_image(name, colorkey=None):
-        fullname = os.path.join('data', name)
-        if not os.path.isfile(fullname):
-            print(f"Файл с изображением '{fullname}' не найден")
-            sys.exit()
-        image = pygame.image.load(fullname)
-        if colorkey is not None:
-            image = image.convert()
-            if colorkey == -1:
-                colorkey = image.get_at((0, 0))
-            image.set_colorkey(colorkey)
-        else:
-            image = image.convert_alpha()
-        return image
-
-    bg = load_image('bg3.jpg')
+    bg = load_image('projectbg.png')
     ground_img = load_image('ground.png')
-    restart_img = load_image('restart.xcf')
-    score_img = load_image('score.xcf')
-
-    # start_img = load_image('start_img')
+    restart_img = load_image('restart_btn.png')
+    score_img = load_image('score_btn.png')
 
     def draw_text(text, font, text_col, x, y):
         img = font.render(text, True, text_col)
@@ -86,7 +62,6 @@ def play():
         return score
 
     class Mario(pygame.sprite.Sprite):
-
         def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
             self.img = []
@@ -102,38 +77,31 @@ def play():
             self.clicked = False
 
         def update(self):
-            if flying == True:
-
+            if flying is True:
                 self.v += 0.5
                 if self.v > 8:
                     self.v = 8
-                if self.rect.bottom < 769:
+                if self.rect.bottom < 746:
                     self.rect.y += int(self.v)
-            if game_over == False:
-                # jump
+            if game_over is False:
                 if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                     self.clicked = True
                     self.v = -10
                 if pygame.mouse.get_pressed()[0] == 0:
                     self.clicked = False
-                # handle the animation
                 flap_cooldown = 5
                 self.counter += 1
-
                 if self.counter > flap_cooldown:
                     self.counter = 0
                     self.index += 1
                     if self.index >= len(self.img):
                         self.index = 0
                     self.image = self.img[self.index]
-
                 self.image = pygame.transform.rotate(self.img[self.index], self.v * -2)
             else:
-
                 self.image = pygame.transform.rotate(self.img[self.index], -90)
 
     class Pipe(pygame.sprite.Sprite):
-
         def __init__(self, x, y, position):
             pygame.sprite.Sprite.__init__(self)
             self.image = load_image("pipe2.png")
@@ -157,15 +125,11 @@ def play():
 
         def draw(self):
             action = False
-
             pos = pygame.mouse.get_pos()
-
             if self.rect.collidepoint(pos):
                 if pygame.mouse.get_pressed()[0] == 1:
                     action = True
-
             screen.blit(self.image, (self.rect.x, self.rect.y))
-
             return action
 
     class Score():
@@ -181,7 +145,6 @@ def play():
                 if pygame.mouse.get_pressed()[0] == 1:
                     action = True
             screen.blit(self.image, (self.rect.x, self.rect.y))
-
             return action
 
     pipe_group = pygame.sprite.Group()
@@ -189,7 +152,7 @@ def play():
     flappy = Mario(100, int(screen_height / 2))
     bird_group.add(flappy)
     res_button = Restart(screen_width // 2 - 60, screen_height // 2 + 50, restart_img)
-    sc_button = Score(screen_width // 2 - 60, screen_height // 2 - 27, score_img)
+    sc_button = Restart(screen_width // 2 - 60, screen_height // 2 - 128, score_img)
     run = True
     while run:
         clock.tick(fps)
@@ -197,13 +160,13 @@ def play():
         pipe_group.draw(screen)
         bird_group.draw(screen)
         bird_group.update()
-        screen.blit(ground_img, (ground_scroll, 600))
+        screen.blit(ground_img, (ground_scroll, 578))
         if len(pipe_group) > 0:
             if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left \
                     and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right \
-                    and pass_pipe == False:
+                    and pass_pipe is False:
                 pass_pipe = True
-            if pass_pipe == True:
+            if pass_pipe is True:
                 if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
                     score += 1
                     pass_pipe = False
@@ -226,7 +189,6 @@ def play():
             ground_scroll -= scroll_speed
             if abs(ground_scroll) > 35:
                 ground_scroll = 0
-
         if game_over == True:
             if res_button.draw():
                 game_over = False
@@ -238,93 +200,81 @@ def play():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
+            if event.type == pygame.MOUSEBUTTONDOWN and flying is False and game_over is False:
                 flying = True
 
         pygame.display.update()
 
-    pygame.quit()
 
-
-def score():
-    while True:
-        OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
-
-        screen.fill("white")
-
-        OPTIONS_TEXT = get_font(45).render("This is the OPTIONS screen.", True, "Black")
-        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(640, 260))
-        screen.blit(OPTIONS_TEXT, OPTIONS_RECT)
-
-        OPTIONS_BACK = Button(image=None, pos=(640, 460),
-                              text_input="BACK", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
-        OPTIONS_BACK.update(screen)
-
+def scores():
+    screen_width = 750
+    screen_height = 746
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption('Top Scores')
+    f1 = pygame.font.SysFont('Comic Sans', 48)
+    f2 = pygame.font.SysFont('Comic Sans', 36)
+    text2 = f1.render("Top players", False,
+                      (222, 241, 243))
+    scores_list = []
+    coord = [200, 275, 350, 425, 500]
+    con = sqlite3.connect("top_score.sqlite")
+    cur = con.cursor()
+    result = cur.execute("""SELECT * FROM top_score""")
+    for score in result:
+        scores_list.append([score[2], score[1]])
+    scores_list = sorted(scores_list)[::-1]
+    y = 200
+    run = True
+    while run:
+        screen.fill((140, 173, 172))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
-                    main_menu()
-
+                run = False
+        pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
+        for x in range(5):
+            text = f2.render(f'{x + 1} {scores_list[x][1]} - {scores_list[x][0]} points', False, (222, 241, 243))
+            screen.blit(text, (150, coord[x]))
+            y += 60
+        screen.blit(text2, (text2.get_width(), 100))
         pygame.display.update()
 
 
-def main_menu():
-    while True:
-        screen.blit(BG, (0, 0))
+class Button():
+    def __init__(self, x, y, image, scale):
+        width = image.get_width()
+        height = image.get_height()
+        self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.clicked = False
 
-        MENU_MOUSE_POS = pygame.mouse.get_pos()
-        MENU_TEXT = get_font(100).render("MENU", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
-
-
-        def load_image(name, colorkey=None):
-            fullname = os.path.join('data', name)
-            if not os.path.isfile(fullname):
-                print(f"Файл с изображением '{fullname}' не найден")
-                sys.exit()
-            image = pygame.image.load(fullname)
-            if colorkey is not None:
-                image = image.convert()
-                if colorkey == -1:
-                    colorkey = image.get_at((0, 0))
-                image.set_colorkey(colorkey)
-            else:
-                image = image.convert_alpha()
-            return image
+    def draw(self, surface):
+        action = False
+        pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                self.clicked = True
+                action = True
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+        surface.blit(self.image, (self.rect.x, self.rect.y))
+        return action
 
 
-        playbtn = Button(load_image("playf.png"), pos=(640, 250), text_input="PLAY", font=get_font(60),
-                         base_color="#d7fcd4", hovering_color="White")
-        scorebtn = Button(load_image("scoref.png"), pos=(640, 400),
-                                text_input="SCORE", font=get_font(60), base_color="#d7fcd4", hovering_color="White")
-        exitbtn = Button(load_image("exitf.png"), pos=(640, 550),
-                             text_input="QUIT", font=get_font(60), base_color="#d7fcd4", hovering_color="White")
-
-        screen.blit(MENU_TEXT, MENU_RECT)
-
-        for button in [playbtn, scorebtn, exitbtn]:
-            button.changeColor(MENU_MOUSE_POS)
-            button.update(screen)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if playbtn.checkForInput(MENU_MOUSE_POS):
-                    play()
-                if scorebtn.checkForInput(MENU_MOUSE_POS):
-                    score()
-                if exitbtn.checkForInput(MENU_MOUSE_POS):
-                    pygame.quit()
-                    sys.exit()
-
-        pygame.display.update()
-
-
-main_menu()
+start_button = Button(310, 210, load_image("start_btn.png"), 0.8)
+exit_button = Button(310, 436, load_image("exit_btn.png"), 0.8)
+score_button = Button(303, 636, load_image("score_btn.png"), 0.8)
+run = True
+while run:
+    screen.fill((202, 228, 241))
+    if start_button.draw(screen):
+        game()
+    if exit_button.draw(screen):
+        run = False
+    if score_button.draw(screen):
+        scores()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+    pygame.display.update()
+pygame.quit()
