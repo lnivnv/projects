@@ -34,7 +34,7 @@ def game():
     screen_height = 746
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption('Flying Mario')
-    font = pygame.font.SysFont('Bauhaus 93', 60)
+    font = pygame.font.SysFont('Comic Sans', 60)
     white = (255, 255, 255)
     ground_scroll = 0
     scroll_speed = 4
@@ -47,7 +47,7 @@ def game():
     pass_pipe = False
     bg = load_image('projectbg.png')
     ground_img = load_image('ground.png')
-    restart_img = load_image('restart_btn.png')
+    restart_img = load_image('restart.png')
     score_img = load_image('score_btn.png')
 
     def draw_text(text, font, text_col, x, y):
@@ -132,20 +132,50 @@ def game():
             screen.blit(self.image, (self.rect.x, self.rect.y))
             return action
 
-    class Score():
-        def __init__(self, x, y, image):
-            self.image = image
-            self.rect = self.image.get_rect()
-            self.rect.topleft = (x, y)
 
-        def draw(self):
-            action = False
-            pos = pygame.mouse.get_pos()
-            if self.rect.collidepoint(pos):
-                if pygame.mouse.get_pressed()[0] == 1:
-                    action = True
-            screen.blit(self.image, (self.rect.x, self.rect.y))
-            return action
+    class Score():
+        screen_width = 750
+        screen_height = 746
+        screen = pygame.display.set_mode((screen_width, screen_height))
+        font = pygame.font.SysFont('Comic Sans', 24)
+        clock = pygame.time.Clock()
+        input_box = pygame.Rect(100, 100, 140, 32)
+        color_inactive = pygame.Color('lightskyblue3')
+        color_active = pygame.Color('dodgerblue2')
+        color = color_inactive
+        active = False
+        text = ''
+        done = False
+
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if input_box.collidepoint(event.pos):
+                        active = not active
+                    else:
+                        active = False
+                    color = color_active if active else color_inactive
+                if event.type == pygame.KEYDOWN:
+                    if active:
+                        if event.key == pygame.K_RETURN:
+                            print(text)
+                            text = ''
+                        elif event.key == pygame.K_BACKSPACE:
+                            text = text[:-1]
+                        else:
+                            text += event.unicode
+
+            screen.fill((30, 30, 30))
+            txt_surface = font.render(text, True, color)
+            width = max(200, txt_surface.get_width() + 10)
+            input_box.w = width
+            screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
+            pygame.draw.rect(screen, color, input_box, 2)
+
+            pygame.display.flip()
+            clock.tick(30)
 
     pipe_group = pygame.sprite.Group()
     bird_group = pygame.sprite.Group()
@@ -169,14 +199,15 @@ def game():
             if pass_pipe is True:
                 if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
                     score += 1
+                    print(score)
                     pass_pipe = False
-        draw_text(str(score), font, white, int(screen_width / 2), 20)
+        draw_text(str(score), font, (63, 90, 93), int(screen_width / 2), 20)
         if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) or flappy.rect.top < 0:
             game_over = True
         if flappy.rect.bottom >= 600:
             game_over = True
             flying = False
-        if flying == True and game_over == False:
+        if flying is True and game_over is False:
             time_now = pygame.time.get_ticks()
             if time_now - last_pipe > pipe_frequency:
                 pipe_height = random.randint(-100, 100)
@@ -189,7 +220,7 @@ def game():
             ground_scroll -= scroll_speed
             if abs(ground_scroll) > 35:
                 ground_scroll = 0
-        if game_over == True:
+        if game_over is True:
             if res_button.draw():
                 game_over = False
                 score = reset_game()
@@ -203,6 +234,50 @@ def game():
             if event.type == pygame.MOUSEBUTTONDOWN and flying is False and game_over is False:
                 flying = True
 
+        pygame.display.update()
+
+
+def rules():
+    screen_width = 750
+    screen_height = 746
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption('Flying Mario Rules')
+    f1 = pygame.font.SysFont('Comic Sans', 48)
+    f2 = pygame.font.SysFont('Comic Sans', 24)
+    text1 = f1.render("Rules", False, (222, 241, 243))
+    text2 = f2.render("1)Flying Mario is a game in which the player", False,
+                      (222, 241, 243))
+    text21 = f2.render(" must control Mario's flight between rows", False,
+                      (222, 241, 243))
+    text22 = f2.render("of pipes by tapping on the screen without", False, (222, 241, 243))
+    text23 = f2.render("hitting them.", False, (222, 241, 243))
+    text3 = f2.render("2)On the main screen, you can start the game", False,
+                      (222, 241, 243))
+    text31 = f2.render("see the top players or exit the game.", False,
+                      (222, 241, 243))
+    text4 = f2.render("3)At the end of the game, you can save", False, (222, 241, 243))
+    text41 = f2.render("your result by entering your", False, (222, 241, 243))
+    text42 = f2.render("name/nickname in a special window", False, (222, 241, 243))
+    text43 = f2.render("start the game again or exit to the main screen.", False,
+                       (222, 241, 243))
+    run = True
+    while run:
+        screen.fill((140, 173, 172))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+        pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
+        screen.blit(text1, (300, 100))
+        screen.blit(text2, (115, 200))
+        screen.blit(text21, (110, 240))
+        screen.blit(text22, (110, 280))
+        screen.blit(text23, (110, 320))
+        screen.blit(text3, (115, 370))
+        screen.blit(text31, (110, 410))
+        screen.blit(text4, (115, 450))
+        screen.blit(text41, (110, 490))
+        screen.blit(text42, (110, 530))
+        screen.blit(text43, (110, 570))
         pygame.display.update()
 
 
@@ -264,6 +339,7 @@ class Button():
 start_button = Button(310, 210, load_image("start_btn.png"), 0.8)
 exit_button = Button(310, 436, load_image("exit_btn.png"), 0.8)
 score_button = Button(303, 636, load_image("score_btn.png"), 0.8)
+rules_button = Button(100, 600, load_image("rules_btn.png"), 0.8)
 run = True
 while run:
     screen.fill((202, 228, 241))
@@ -273,6 +349,8 @@ while run:
         run = False
     if score_button.draw(screen):
         scores()
+    if rules_button.draw(screen):
+        rules()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
