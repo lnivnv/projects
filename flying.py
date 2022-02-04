@@ -55,7 +55,7 @@ def game():
             self.index = 0
             self.counter = 0
             for i in range(1, 3):
-                img = load_image(f"flyingmario{i}.xcf")
+                img = load_image(f"p{i}.png")
                 self.img.append(img)
             self.image = self.img[self.index]
             self.rect = self.image.get_rect()
@@ -95,22 +95,21 @@ def game():
             self.rect = self.image.get_rect()
             if position == 1:
                 self.image = pygame.transform.flip(self.image, False, True)
-                self.rect.bottomleft = [x, y - int(pipe_gap / 2)]
+                self.rect.bottomleft = [x, y - int(pipe_gap / 1.7)]
             elif position == -1:
-                self.rect.topleft = [x, y + int(pipe_gap / 2)]
+                self.rect.topleft = [x, y + int(pipe_gap / 1.7)]
 
         def update(self):
             self.rect.x -= scroll_speed
             if self.rect.right < 0:
                 self.kill()
-
     pipe_group = pygame.sprite.Group()
     mario_group = pygame.sprite.Group()
     flappy = Mario(100, int(screen_height / 2))
     mario_group.add(flappy)
-    res_button = Button(screen_width // 2 - 60, screen_height // 2 + 50, restart_img, 0.8)
-    sc_button = Button(screen_width // 2 - 60, screen_height // 2 - 128, score_img, 0.8)
-    m_button = Button(screen_width // 2 - 60, screen_height // 2 - 328, menu_img, 0.8)
+    res_button = Button(270, 500, restart_img, 0.8)
+    sc_button = Button(270, 350, score_img, 0.8)
+    m_button = Button(284, 200, menu_img, 0.8)
     run = True
     while run:
         clock.tick(fps)
@@ -127,7 +126,6 @@ def game():
             if pass_pipe is True:
                 if mario_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
                     score += 1
-                    print(score)
                     pass_pipe = False
         draw_text(str(score), font, (63, 90, 93), int(screen_width / 2), 20)
         if pygame.sprite.groupcollide(mario_group, pipe_group, False, False) or flappy.rect.top < 0:
@@ -156,7 +154,6 @@ def game():
                 add_username(score)
             if m_button.draw(screen):
                 menu()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -217,8 +214,9 @@ def add_username(score):
     screen_height = 746
     screen = pygame.display.set_mode((screen_width, screen_height))
     f1 = pygame.font.SysFont('Comic Sans', 24)
+    text1 = f1.render("Чтобы добавить свой результат введите имя/ник", False, (0, 0, 0))
     clock = pygame.time.Clock()
-    input_box = pygame.Rect(100, 100, 140, 32)
+    input_box = pygame.Rect(100, 200, 140, 32)
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
     color = color_inactive
@@ -238,7 +236,6 @@ def add_username(score):
             if event.type == pygame.KEYDOWN:
                 if active:
                     if event.key == pygame.K_RETURN:
-                        print(text)
                         con = sqlite3.connect("score.db")
                         cur = con.cursor()
                         result = cur.execute("""INSERT INTO score (name, point) VALUES (?, ?)""", (text, score, ))
@@ -251,6 +248,7 @@ def add_username(score):
                         text += event.unicode
 
         screen.fill((241, 245, 230))
+        screen.blit(text1, (50, 100))
         txt_surface = f1.render(text, True, color)
         width = max(200, txt_surface.get_width() + 10)
         input_box.w = width
@@ -270,25 +268,28 @@ def scores():
     text2 = f1.render("Top players", False,
                       (222, 241, 243))
     scores_list = []
-    coord = [200, 235, 300, 425, 500, 535, 600]
+    coord = [200, 235, 270, 305, 340, 375, 410, 445, 480, 515, 550, 585, 620, 655, 690, 725]
+    print(len(coord))
     con = sqlite3.connect("score.db")
     cur = con.cursor()
     result = cur.execute("""SELECT * FROM score""")
     for sc in result:
         scores_list.append([sc[2], sc[1]])
     scores_list = sorted(scores_list)[::-1]
-    print(scores_list)
     y = 200
     run = True
+    q = 13
     while run:
         screen.fill((140, 173, 172))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
         pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
-        for x in range(len(scores_list)):
-            text = f2.render(f'{x + 1} {scores_list[x][1]} - {scores_list[x][0]} points', False, (222, 241, 243))
-            screen.blit(text, (150, coord[x]))
+        if len(scores_list) < 13:
+            q = len(scores_list)
+        for x in range(q):
+            text = f2.render(f'{x + 1}) {scores_list[x][1]} - {scores_list[x][0]} points', False, (222, 241, 243))
+            screen.blit(text, (110, coord[x]))
             y += 30
         screen.blit(text2, (text2.get_width(), 100))
         pygame.display.update()
