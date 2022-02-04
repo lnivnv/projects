@@ -4,12 +4,6 @@ import os
 import sys
 import sqlite3
 
-pygame.init()
-screen_height = 750
-screen_width = 746
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption('Flaying Mario Menu')
-
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -35,7 +29,6 @@ def game():
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption('Flying Mario')
     font = pygame.font.SysFont('Comic Sans', 60)
-    white = (255, 255, 255)
     ground_scroll = 0
     scroll_speed = 4
     flying = False
@@ -45,21 +38,15 @@ def game():
     last_pipe = pygame.time.get_ticks() - pipe_frequency
     score = 0
     pass_pipe = False
-    bg = load_image('projectbg.png')
+    bg = load_image(f'projectbg.png')
     ground_img = load_image('ground.png')
-    restart_img = load_image('restart.png')
-    score_img = load_image('score_btn.png')
+    restart_img = load_image('restart_btn.png')
+    score_img = load_image('addscore_btn.png')
+    menu_img = load_image('menu_btn.png')
 
     def draw_text(text, font, text_col, x, y):
         img = font.render(text, True, text_col)
         screen.blit(img, (x, y))
-
-    def reset_game():
-        pipe_group.empty()
-        flappy.rect.x = 100
-        flappy.rect.y = int(screen_height / 2)
-        score = 0
-        return score
 
     class Mario(pygame.sprite.Sprite):
         def __init__(self, x, y):
@@ -117,92 +104,33 @@ def game():
             if self.rect.right < 0:
                 self.kill()
 
-    class Restart():
-        def __init__(self, x, y, image):
-            self.image = image
-            self.rect = self.image.get_rect()
-            self.rect.topleft = (x, y)
-
-        def draw(self):
-            action = False
-            pos = pygame.mouse.get_pos()
-            if self.rect.collidepoint(pos):
-                if pygame.mouse.get_pressed()[0] == 1:
-                    action = True
-            screen.blit(self.image, (self.rect.x, self.rect.y))
-            return action
-
-
-    class Score():
-        screen_width = 750
-        screen_height = 746
-        screen = pygame.display.set_mode((screen_width, screen_height))
-        font = pygame.font.SysFont('Comic Sans', 24)
-        clock = pygame.time.Clock()
-        input_box = pygame.Rect(100, 100, 140, 32)
-        color_inactive = pygame.Color('lightskyblue3')
-        color_active = pygame.Color('dodgerblue2')
-        color = color_inactive
-        active = False
-        text = ''
-        done = False
-
-        while not done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    done = True
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if input_box.collidepoint(event.pos):
-                        active = not active
-                    else:
-                        active = False
-                    color = color_active if active else color_inactive
-                if event.type == pygame.KEYDOWN:
-                    if active:
-                        if event.key == pygame.K_RETURN:
-                            print(text)
-                            text = ''
-                        elif event.key == pygame.K_BACKSPACE:
-                            text = text[:-1]
-                        else:
-                            text += event.unicode
-
-            screen.fill((30, 30, 30))
-            txt_surface = font.render(text, True, color)
-            width = max(200, txt_surface.get_width() + 10)
-            input_box.w = width
-            screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
-            pygame.draw.rect(screen, color, input_box, 2)
-
-            pygame.display.flip()
-            clock.tick(30)
-
     pipe_group = pygame.sprite.Group()
-    bird_group = pygame.sprite.Group()
+    mario_group = pygame.sprite.Group()
     flappy = Mario(100, int(screen_height / 2))
-    bird_group.add(flappy)
-    res_button = Restart(screen_width // 2 - 60, screen_height // 2 + 50, restart_img)
-    sc_button = Restart(screen_width // 2 - 60, screen_height // 2 - 128, score_img)
+    mario_group.add(flappy)
+    res_button = Button(screen_width // 2 - 60, screen_height // 2 + 50, restart_img, 0.8)
+    sc_button = Button(screen_width // 2 - 60, screen_height // 2 - 128, score_img, 0.8)
+    m_button = Button(screen_width // 2 - 60, screen_height // 2 - 328, menu_img, 0.8)
     run = True
     while run:
         clock.tick(fps)
         screen.blit(bg, (0, 0))
         pipe_group.draw(screen)
-        bird_group.draw(screen)
-        bird_group.update()
+        mario_group.draw(screen)
+        mario_group.update()
         screen.blit(ground_img, (ground_scroll, 578))
         if len(pipe_group) > 0:
-            if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left \
-                    and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right \
+            if mario_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left \
+                    and mario_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right \
                     and pass_pipe is False:
                 pass_pipe = True
             if pass_pipe is True:
-                if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
+                if mario_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
                     score += 1
                     print(score)
                     pass_pipe = False
         draw_text(str(score), font, (63, 90, 93), int(screen_width / 2), 20)
-        if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) or flappy.rect.top < 0:
+        if pygame.sprite.groupcollide(mario_group, pipe_group, False, False) or flappy.rect.top < 0:
             game_over = True
         if flappy.rect.bottom >= 600:
             game_over = True
@@ -221,96 +149,44 @@ def game():
             if abs(ground_scroll) > 35:
                 ground_scroll = 0
         if game_over is True:
-            if res_button.draw():
-                game_over = False
-                score = reset_game()
-            if sc_button.draw():
-                game_over = False
-                score = reset_game()
+            if res_button.draw(screen):
+                game()
+                exit()
+            if sc_button.draw(screen):
+                add_username(score)
+            if m_button.draw(screen):
+                menu()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN and flying is False and game_over is False:
                 flying = True
+        pygame.display.flip()
 
-        pygame.display.update()
 
-
-def rules():
+def about_game():
     screen_width = 750
     screen_height = 746
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption('Flying Mario Rules')
+    pygame.display.set_caption('About game')
     f1 = pygame.font.SysFont('Comic Sans', 48)
-    f2 = pygame.font.SysFont('Comic Sans', 24)
-    text1 = f1.render("Rules", False, (222, 241, 243))
-    text2 = f2.render("1)Flying Mario is a game in which the player", False,
-                      (222, 241, 243))
-    text21 = f2.render(" must control Mario's flight between rows", False,
-                      (222, 241, 243))
-    text22 = f2.render("of pipes by tapping on the screen without", False, (222, 241, 243))
-    text23 = f2.render("hitting them.", False, (222, 241, 243))
-    text3 = f2.render("2)On the main screen, you can start the game", False,
-                      (222, 241, 243))
-    text31 = f2.render("see the top players or exit the game.", False,
-                      (222, 241, 243))
-    text4 = f2.render("3)At the end of the game, you can save", False, (222, 241, 243))
-    text41 = f2.render("your result by entering your", False, (222, 241, 243))
-    text42 = f2.render("name/nickname in a special window", False, (222, 241, 243))
-    text43 = f2.render("start the game again or exit to the main screen.", False,
-                       (222, 241, 243))
+    f2 = pygame.font.SysFont('Comic Sans', 21)
+    text1 = f1.render("О игре", False, (0, 0, 0))
+    file = list(open("flying_mario_rules.txt", 'r', encoding="utf-8"))
+    file = [line.rstrip() for line in file]
     run = True
+    coordx = [200, 240, 280, 320, 360, 400, 440, 480, 520]
     while run:
-        screen.fill((140, 173, 172))
+        screen.fill((241, 245, 230))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
         pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
         screen.blit(text1, (300, 100))
-        screen.blit(text2, (115, 200))
-        screen.blit(text21, (110, 240))
-        screen.blit(text22, (110, 280))
-        screen.blit(text23, (110, 320))
-        screen.blit(text3, (115, 370))
-        screen.blit(text31, (110, 410))
-        screen.blit(text4, (115, 450))
-        screen.blit(text41, (110, 490))
-        screen.blit(text42, (110, 530))
-        screen.blit(text43, (110, 570))
-        pygame.display.update()
-
-
-def scores():
-    screen_width = 750
-    screen_height = 746
-    screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption('Top Scores')
-    f1 = pygame.font.SysFont('Comic Sans', 48)
-    f2 = pygame.font.SysFont('Comic Sans', 36)
-    text2 = f1.render("Top players", False,
-                      (222, 241, 243))
-    scores_list = []
-    coord = [200, 275, 350, 425, 500]
-    con = sqlite3.connect("top_score.sqlite")
-    cur = con.cursor()
-    result = cur.execute("""SELECT * FROM top_score""")
-    for score in result:
-        scores_list.append([score[2], score[1]])
-    scores_list = sorted(scores_list)[::-1]
-    y = 200
-    run = True
-    while run:
-        screen.fill((140, 173, 172))
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-        pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
-        for x in range(5):
-            text = f2.render(f'{x + 1} {scores_list[x][1]} - {scores_list[x][0]} points', False, (222, 241, 243))
-            screen.blit(text, (150, coord[x]))
-            y += 60
-        screen.blit(text2, (text2.get_width(), 100))
+        for x in range(len(file)):
+            text = f2.render(file[x], False, (0, 0, 0))
+            screen.blit(text, (110, coordx[x]))
         pygame.display.update()
 
 
@@ -336,23 +212,115 @@ class Button():
         return action
 
 
-start_button = Button(310, 210, load_image("start_btn.png"), 0.8)
-exit_button = Button(310, 436, load_image("exit_btn.png"), 0.8)
-score_button = Button(303, 636, load_image("score_btn.png"), 0.8)
-rules_button = Button(100, 600, load_image("rules_btn.png"), 0.8)
-run = True
-while run:
-    screen.fill((202, 228, 241))
-    if start_button.draw(screen):
-        game()
-    if exit_button.draw(screen):
-        run = False
-    if score_button.draw(screen):
-        scores()
-    if rules_button.draw(screen):
-        rules()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+def add_username(score):
+    screen_width = 750
+    screen_height = 746
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    f1 = pygame.font.SysFont('Comic Sans', 24)
+    clock = pygame.time.Clock()
+    input_box = pygame.Rect(100, 100, 140, 32)
+    color_inactive = pygame.Color('lightskyblue3')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+    active = False
+    text = ''
+    run = True
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        print(text)
+                        con = sqlite3.connect("score.db")
+                        cur = con.cursor()
+                        result = cur.execute("""INSERT INTO score (name, point) VALUES (?, ?)""", (text, score, ))
+                        con.commit()
+                        text = ''
+                        run = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]
+                    else:
+                        text += event.unicode
+
+        screen.fill((241, 245, 230))
+        txt_surface = f1.render(text, True, color)
+        width = max(200, txt_surface.get_width() + 10)
+        input_box.w = width
+        screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
+        pygame.draw.rect(screen, color, input_box, 2)
+        pygame.display.flip()
+        clock.tick(30)
+
+
+def scores():
+    screen_width = 750
+    screen_height = 746
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption('Top Scores')
+    f1 = pygame.font.SysFont('Comic Sans', 48)
+    f2 = pygame.font.SysFont('Comic Sans', 20)
+    text2 = f1.render("Top players", False,
+                      (222, 241, 243))
+    scores_list = []
+    coord = [200, 235, 300, 425, 500, 535, 600]
+    con = sqlite3.connect("score.db")
+    cur = con.cursor()
+    result = cur.execute("""SELECT * FROM score""")
+    for sc in result:
+        scores_list.append([sc[2], sc[1]])
+    scores_list = sorted(scores_list)[::-1]
+    print(scores_list)
+    y = 200
+    run = True
+    while run:
+        screen.fill((140, 173, 172))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+        pygame.draw.rect(screen, (64, 76, 77), (100, 200, 550, 450), 8)
+        for x in range(len(scores_list)):
+            text = f2.render(f'{x + 1} {scores_list[x][1]} - {scores_list[x][0]} points', False, (222, 241, 243))
+            screen.blit(text, (150, coord[x]))
+            y += 30
+        screen.blit(text2, (text2.get_width(), 100))
+        pygame.display.update()
+
+
+def menu():
+    pygame.init()
+    screen_height = 750
+    screen_width = 746
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption('Flaying Mario Menu')
+    start_button = Button(265, 150, load_image("start_btn.png"), 0.8)
+    score_button = Button(265, 300, load_image("score_btn.png"), 0.8)
+    exit_button = Button(284, 450, load_image("exit_btn.png"), 0.8)
+    rules_button = Button(0, 650, load_image("rules_btn.png"), 0.8)
+    run = True
+    while run:
+        screen.fill((140, 173, 172))
+        if start_button.draw(screen):
+            game()
+        if exit_button.draw(screen):
             run = False
-    pygame.display.update()
-pygame.quit()
+        if score_button.draw(screen):
+            scores()
+        if rules_button.draw(screen):
+            about_game()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+        pygame.display.update()
+    pygame.quit()
+    exit()
+
+
+menu()
