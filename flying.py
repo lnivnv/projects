@@ -258,6 +258,10 @@ def add_username(score):
         clock.tick(30)
 
 
+def keyFunc(item):
+    return item[0]
+
+
 def scores():
     screen_width = 750
     screen_height = 746
@@ -275,7 +279,8 @@ def scores():
     result = cur.execute("""SELECT * FROM score""")
     for sc in result:
         scores_list.append([sc[2], sc[1]])
-    scores_list = sorted(scores_list)[::-1]
+    scores_list.sort(key=keyFunc)
+    scores_list = scores_list[::-1]
     y = 200
     run = True
     q = 13
