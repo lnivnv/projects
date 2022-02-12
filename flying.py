@@ -238,7 +238,7 @@ def add_username(score):
                     if event.key == pygame.K_RETURN:
                         con = sqlite3.connect("score.db")
                         cur = con.cursor()
-                        result = cur.execute("""INSERT INTO score (name, point) VALUES (?, ?)""", (text, score, ))
+                        result = cur.execute("""INSERT INTO score (name, point) VALUES (?, ?)""", (str(text), score, ))
                         con.commit()
                         text = ''
                         run = False
